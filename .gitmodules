@@ -2,3 +2,7 @@
 	path = frontend
 	url = ./
 	branch = frontend/master
+[submodule "backend"]
+	path = backend
+	url = ./
+	branch = backend/master
