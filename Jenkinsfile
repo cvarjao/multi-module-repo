@@ -9,7 +9,7 @@ pipeline {
         stage('checkout') {
             agent any
             steps {
-              timeout(time: 10, uint: 'MINUTES') {
+              timeout(time: 10, unit: 'MINUTES') {
                 echo "Checkout ..."
                 echo "Checkout ... Done!"
                }
@@ -18,7 +18,13 @@ pipeline {
         stage('compile') {
             agent any
             steps {
+                script {
+                  openshift.withCluster() { // Use "default" cluster or fallback to OpenShift cluster detection
+                      echo "Hello from the project running Jenkins: ${openshift.project()}"
+                  }
+                }
                 echo "Compiling ..."
+                
                 echo "Compiling ... Done!"
             }
         }
