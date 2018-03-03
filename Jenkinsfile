@@ -41,7 +41,7 @@ pipeline {
                       openshift.selector( 'bc', [ 'app':appName] ).narrow('bc').cancelBuild()
                       openshift.selector( 'builds', [ 'app':appName] ).watch {
                         echo "builds: ${it.count()}"
-                        if ( it.count() == 0 ) return false
+                        if ( it.count() == 0 ) return true
 
                         // A robust script should not assume that only one build has been created, so
                         // we will need to iterate through all builds.
