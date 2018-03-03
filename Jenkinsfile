@@ -28,7 +28,7 @@ pipeline {
                 script {
                   def scmUrl = scm.getUserRemoteConfigs()[0].getUrl()
                   def appName = env.BRANCH_NAME.split('/')[0]
-                  def scmExtensions = scm.getExtensions()
+                  def scmExtensions = scm.getExtensions().toList()
                   
                   for (int i = 0; i < scmExtensions.size(); i++) {
                     def scmExtension=scmExtensions.get(i)
