@@ -81,7 +81,7 @@ pipeline {
                         dcSelector.delete()
                       }
                       
-                      def _newApp=openshift.newApp('python:2.7~https://github.com/OpenShiftDemos/os-sample-python.git', "--name=${appName}", '-l', "app=${appName}")
+                      def _newApp=openshift.newApp("python:2.7~${scmUrl}#${env.BRANCH_NAME}", "--name=${appName}", '-l', "app=${appName}")
                       _newApp.withEach {
                           echo "Created '${it.name()}'"
                       }
