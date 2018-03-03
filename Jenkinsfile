@@ -18,6 +18,11 @@ pipeline {
         stage('compile') {
             agent any
             steps {
+                script {
+                  openshift.withCluster() { // Use "default" cluster or fallback to OpenShift cluster detection
+                      echo "Hello from the project running Jenkins: ${openshift.project()}"
+                  }
+                }
                 echo "Compiling ..."
                 echo "Compiling ... Done!"
             }
