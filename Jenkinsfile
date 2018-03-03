@@ -23,7 +23,7 @@ pipeline {
             steps {
                 script {
                   openshift.withCluster() { // Use "default" cluster or fallback to OpenShift cluster detection
-                      def dcSelector=openshift.selector( 'dc', [ name: 'frontend'] ).describe()
+                      def dcSelector=openshift.selector( 'dc', [ name: 'frontend'] )
                       echo "There are ${dcSelector.count()} deploymentConfig"
                       echo "Hello from the project running Jenkins: ${openshift.project()}"
                   }
