@@ -9,6 +9,9 @@ pipeline {
         stage('checkout') {
             agent any
             steps {
+              echo "${env}"
+              echo 'Building Branch: ' + env.BRANCH_NAME
+              echo 'Build Number: ' + env.BUILD_NUMBER
               timeout(time: 10, unit: 'MINUTES') {
                 echo "Checkout ..."
                 echo "Checkout ... Done!"
@@ -20,6 +23,8 @@ pipeline {
             steps {
                 script {
                   openshift.withCluster() { // Use "default" cluster or fallback to OpenShift cluster detection
+                      def dcSelector=openshift.selector( 'dc', [ name: 'frontend'] ).describe()
+                      echo "There are ${dcSelector.count()} deploymentConfig"
                       echo "Hello from the project running Jenkins: ${openshift.project()}"
                   }
                 }
