@@ -8,7 +8,10 @@ pipeline {
     stages {
         stage('checkout') {
             agent any
-            steps {
+            steps {              
+              sh "git rev-parse --short HEAD" 
+              sh "git ls-remote"
+              sh "git show-ref --head --dereference"
               echo "${env}"
               echo 'Building Branch: ' + env.BRANCH_NAME
               echo 'Build Number: ' + env.BUILD_NUMBER
@@ -28,12 +31,15 @@ pipeline {
                 script {
                   def scmUrl = scm.getUserRemoteConfigs()[0].getUrl()
                   def appName = env.BRANCH_NAME.split('/')[0]
-                  def scmExtensions = scm.getExtensions().toList()
                   
+                  def scmExtensions = scm.getExtensions().toList()                  
                   for (int i = 0; i < scmExtensions.size(); i++) {
                     def scmExtension=scmExtensions.get(i)
                     echo "scmExtension:${scmExtension}"
                   }
+                  
+                  scmExtensions=null;
+                  
                   echo "scmUrl:${scmUrl}"
                   echo "appName:${appName}"
                   echo "scm.getBranches():${scm.getBranches()}"
