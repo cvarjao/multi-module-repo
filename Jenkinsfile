@@ -60,8 +60,8 @@ pipeline {
                 
                 def appId = "${appName}-${envName}";
                 
-                def baseDeleteLabels=[ 'app':appName, 'env-name':envName]
-                def baseNewAppLabels=[ 'app':appName, 'env-name':envName, 'build-number':"${env.BUILD_NUMBER}"]
+                def baseDeleteLabels=[ 'app-name':appName, 'env-name':envName]
+                def baseNewAppLabels=[ 'app':appId, 'env-name':envName, 'build-number':"${env.BUILD_NUMBER}", 'app-name':appName]
                 
                 if (IS_PR){
                   baseNewAppLabels['from-pr']='true'
