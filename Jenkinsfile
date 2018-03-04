@@ -31,26 +31,42 @@ pipeline {
               //}
               script {
                 def gitCommit = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+                def IS_PR=(env.CHANGE_ID != null && env.CHANGE_ID.trim().length()>0)
+                
                 echo "gitCommit:${gitCommit}"
-                def gitRemoteRefBranch = sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep -v 'refs/remotes/origin/pr/'").trim()
-                def gitRemoteRefPr = sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep 'refs/remotes/origin/pr/'").trim()
-                echo "gitRemoteRefPr:${gitRemoteRefPr}"
-                echo "gitRemoteRefBranch:${gitRemoteRefBranch}"
+                echo "IS_PR:${IS_PR}"
+                
+                //def gitRemoteRefBranch = sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep -v 'refs/remotes/origin/pr/'").trim()
+                //echo "gitRemoteRefBranch:${gitRemoteRefBranch}"
+                
+                //def gitRemoteRefPr = sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep 'refs/remotes/origin/pr/'").trim()
+                //echo "gitRemoteRefPr:${gitRemoteRefPr}"
+                
                 
                 def scmUrl = scm.getUserRemoteConfigs()[0].getUrl()
-                def appName = env.CHANGE_ID.trim().length()==0?env.BRANCH_NAME.split('/')[0]:env.CHANGE_TARGET.split('/')[0];
-                def envName = env.CHANGE_ID.trim().length()==0?env.BRANCH_NAME.replaceAll('\\Q/\\E','_'):'pr'+env.CHANGE_ID;
-                def appId = "${appName}-${envName}"
+                def appName = null;
+                def envName = null;
+                def buildBranchName = null;
                 
-                def buildBranchName = env.CHANGE_ID.trim().length()==0?env.BRANCH_NAME:"refs/pull/${env.CHANGE_ID}/head";
+                if (IS_PR){
+                  appName=env.CHANGE_TARGET.split('/')[0]
+                  envName='pr'+env.CHANGE_ID;
+                  buildBranchName = "refs/pull/${env.CHANGE_ID}/head";
+                }else{
+                  appName=env.BRANCH_NAME.split('/')[0];
+                  envName=env.BRANCH_NAME.substring(appName.length() +1 ).replaceAll('\\Q/\\E','-');
+                  buildBranchName = env.BRANCH_NAME;
+                }
                 
+                def appId = "${appName}-${envName}";
                 
                 def baseDeleteLabels=[ 'app':appName, 'env-name':envName]
                 def baseNewAppLabels=[ 'app':appName, 'env-name':envName, 'build-number':"${env.BUILD_NUMBER}"]
                 
-                if (env.CHANGE_ID.trim().length()){
+                if (IS_PR){
                   baseNewAppLabels['from-pr']='true'
                 }
+                
                 echo "scmUrl:${scmUrl}"
                 echo "appName:${appName}"
                 echo "envName:${envName}"
@@ -120,16 +136,15 @@ pipeline {
                     
                     //JOB_NAME
                     echo "Setting-up Route"
-                    if (env.CHANGE_ID.trim().length()>0){
+                    if (IS_PR){
                       _newApp.label( [ 'pull-request':"${env.CHANGE_ID}" ], "--overwrite" )
                       _newApp.narrow('service').expose() 
                       def _svc=_newApp.narrow('service').object()
                       openshift.selector("routes/${_svc.metadata.name}").label(baseNewAppLabels, "--overwrite" )
-                    }else{
-                      
+                    }else{                      
                       _newApp.narrow('service').expose();
-                      _newApp.narrow('service').related("routes").label(baseNewAppLabels, "--overwrite" )
-                      //openshift.selector("routes/${_newApp.narrow('service').name()}").label(baseNewAppLabels, "--overwrite" )
+                      def _svc=_newApp.narrow('service').object()
+                      openshift.selector("routes/${_svc.metadata.name}").label(baseNewAppLabels, "--overwrite" )
                     }
                     
                     echo "Starting Build"
