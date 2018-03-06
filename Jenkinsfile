@@ -1,5 +1,3 @@
 stage('cleanup'){
-  node('none'){
-    echo 'Hello'
-  }
+  echo 'Hello'
 }
