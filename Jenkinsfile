@@ -5,19 +5,19 @@ pipeline {
       buildDiscarder(logRotator(numToKeepStr:'10'))
       skipDefaultCheckout()
     }
-    agent none 
+    agent none
     stages {
         stage('checkout') {
             agent any
             steps {
               checkout scm
-              //sh "git rev-parse HEAD" 
+              //sh "git rev-parse HEAD"
               //sh "git ls-remote"
               //sh "git show-ref --head --dereference"
               //sh "git branch"
               //sh "git branch -a"
               //sh "git status"
-              //sh "git status -sb"              
+              //sh "git status -sb"
               //echo "${env}"
               echo 'Building Branch: ' + env.BRANCH_NAME
               echo 'Build Number: ' + env.BUILD_NUMBER
@@ -32,22 +32,22 @@ pipeline {
               script {
                 def gitCommit = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
                 def IS_PR=(env.CHANGE_ID != null && env.CHANGE_ID.trim().length()>0)
-                
+
                 echo "gitCommit:${gitCommit}"
                 echo "IS_PR:${IS_PR}"
-                
+
                 //def gitRemoteRefBranch = sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep -v 'refs/remotes/origin/pr/'").trim()
                 //echo "gitRemoteRefBranch:${gitRemoteRefBranch}"
-                
+
                 //def gitRemoteRefPr = sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep 'refs/remotes/origin/pr/'").trim()
                 //echo "gitRemoteRefPr:${gitRemoteRefPr}"
-                
-                
+
+
                 def scmUrl = scm.getUserRemoteConfigs()[0].getUrl()
                 def appName = null;
                 def envName = null;
                 def buildBranchName = null;
-                
+
                 if (IS_PR){
                   appName=env.CHANGE_TARGET.split('/')[0]
                   envName='pr'+env.CHANGE_ID;
@@ -57,16 +57,16 @@ pipeline {
                   envName=env.BRANCH_NAME.substring(appName.length() +1 ).replaceAll('\\Q/\\E','-');
                   buildBranchName = env.BRANCH_NAME;
                 }
-                
+
                 def appId = "${appName}-${envName}";
-                
+
                 def baseDeleteLabels=[ 'app-name':appName, 'env-name':envName]
                 def baseNewAppLabels=[ 'app':appId, 'env-name':envName, 'build-number':"${env.BUILD_NUMBER}", 'app-name':appName]
-                
+
                 if (IS_PR){
                   baseNewAppLabels['from-pr']='true'
                 }
-                
+
                 echo "scmUrl:${scmUrl}"
                 echo "appName:${appName}"
                 echo "envName:${envName}"
@@ -74,9 +74,9 @@ pipeline {
                 echo "buildBranchName:${buildBranchName}"
                 echo "scm.getBranches():${scm.getBranches()}"
                 echo "scm.getKey():${scm.getKey()}"
-                
+
                 //def gitCommit = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
-                
+
                 openshift.withCluster() { // Use "default" cluster or fallback to OpenShift cluster detection
                     echo "Cancelling Builds"
                     openshift.selector( 'bc', baseDeleteLabels ).narrow('bc').cancelBuild()
@@ -98,63 +98,63 @@ pipeline {
                       }
                       return allDone;
                     }
-                    
+
                     echo "Scaling down"
                     openshift.selector( 'dc', baseDeleteLabels ).scale(["--replicas=0"])
-                    
+
                     openshift.selector( 'pods', baseDeleteLabels).watch {
                       echo "pods: ${it.count()}"
                       return it.count() == 0;
                     }
-                    
+
                     echo "Removing"
                     def dcSelector=openshift.selector( 'all', baseDeleteLabels )
-                    
-                    
+
+
                     echo "There are ${dcSelector.count()} deploymentConfig"
                     if (dcSelector.count() !=0 ){
-                      def _items=dcSelector.freeze();                        
+                      def _items=dcSelector.freeze();
                       dcSelector.withEach {
                         echo "Deleted '${it.name()}'"
                       }
                       dcSelector.delete()
                     }
-                    
+
                     //oc get is,bc,svc,routes -l app=backend --export=true --output=json  | out-file ".openshift/resources.json" -encoding utf8
                     //oc new-app 'python:2.7~https://github.com/cvarjao/multi-module-repo.git#frontend/feature/update-greetings' --dry-run=true --output=json | out-file ".openshift/resources.json" -encoding utf8
-                    
-                    
+
+
                     def resourcesAsText=readFile(".openshift/resources.json").replaceAll('\\Q#{app_name}\\E', appId).replaceAll('\\Q#{app_git_url}\\E', scmUrl).replaceAll('\\Q#{app_git_branch}\\E', buildBranchName)
                     echo "${resourcesAsText}"
-                    
+
                     def _newApp=openshift.create(resourcesAsText)
-                    
+
                     _newApp.label(baseNewAppLabels, "--overwrite" )
                     _newApp.label([ 'build-number':"${env.BUILD_NUMBER}" ], "--overwrite" )
-                    
+
                     echo "${_newApp.objects()}"
-                    
+
                     //JOB_NAME
                     echo "Setting-up Route"
                     if (IS_PR){
                       _newApp.label( [ 'pull-request':"${env.CHANGE_ID}" ], "--overwrite" )
-                      _newApp.narrow('service').expose() 
+                      _newApp.narrow('service').expose()
                       def _svc=_newApp.narrow('service').object()
                       openshift.selector("routes/${_svc.metadata.name}").label(baseNewAppLabels, "--overwrite" )
-                    }else{                      
+                    }else{
                       _newApp.narrow('service').expose();
                       def _svc=_newApp.narrow('service').object()
                       openshift.selector("routes/${_svc.metadata.name}").label(baseNewAppLabels, "--overwrite" )
                     }
-                    
+
                     echo "Starting Build"
                     def buildSelector = _newApp.narrow('bc').startBuild("--commit=${buildBranchName}")
                     echo "New build started - ${buildSelector.name()}"
                     buildSelector.logs('-f')
-                    
-                    echo "${_newApp.count()} has been created"                    
+
+                    echo "${_newApp.count()} has been created"
                     echo "Hello from the project running Jenkins: ${openshift.project()}"
-                    
+
                     echo "Routes:"
                     openshift.selector( 'routes', baseNewAppLabels).withEach {
                       def _o=it.object()
@@ -163,7 +163,7 @@ pipeline {
                 }
               }
               echo "Compiling ..."
-              
+              build 'frontend-sit%2Fmaster'
               echo "Compiling ... Done!"
             }
         }
