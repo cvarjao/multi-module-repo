@@ -8,6 +8,6 @@ properties(
 
 stage('cleanup'){
   openshift.withCluster() {
-    openshift.selector( 'all', ['from-pr':'true']]).delete();
+    openshift.selector('all', ['from-pr':'true']).delete();
   }
 }
