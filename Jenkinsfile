@@ -54,7 +54,7 @@ pipeline {
 
                 echo "gitCommitId:${gitCommitId}"
                 echo "isPullRequest:${isPullRequest}"
-
+                /*
                 if (isPullRequest){
                     gitRemoteRef=sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommitId}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep 'refs/remotes/origin/pr/'").trim()
                 }else{
@@ -62,7 +62,7 @@ pipeline {
                 }
 
                 echo "gitRemoteRef:${gitRemoteRef}"
-
+                */
 
                 def scmUrl = scm.getUserRemoteConfigs()[0].getUrl()
                 def appName = null;
