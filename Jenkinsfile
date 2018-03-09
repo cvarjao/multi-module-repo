@@ -5,6 +5,7 @@ import jenkins.model.CauseOfInterruption.UserInterruption
 def doDeploy=false;
 def gitCommitId=''
 def isPullRequest=false;
+def gitRemoteRef=''
 
 def killOldBuilds() {
   while(currentBuild.rawBuild.getPreviousBuildInProgress() != null) {
@@ -53,11 +54,13 @@ pipeline {
                 echo "gitCommit:${gitCommitId}"
                 echo "isPullRequest:${isPullRequest}"
 
-                //def gitRemoteRefBranch = sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep -v 'refs/remotes/origin/pr/'").trim()
-                //echo "gitRemoteRefBranch:${gitRemoteRefBranch}"
+                if (isPullRequest){
+                    gitRemoteRef=sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep 'refs/remotes/origin/pr/'").trim()
+                }else{
+                    gitRemoteRef=sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep -v 'refs/remotes/origin/pr/'").trim()
+                }
 
-                //def gitRemoteRefPr = sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep 'refs/remotes/origin/pr/'").trim()
-                //echo "gitRemoteRefPr:${gitRemoteRefPr}"
+                echo "gitRemoteRef:${gitRemoteRef}"
 
 
                 def scmUrl = scm.getUserRemoteConfigs()[0].getUrl()
