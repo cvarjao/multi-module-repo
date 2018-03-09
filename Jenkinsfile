@@ -51,13 +51,13 @@ pipeline {
                 gitCommitId = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
                 isPullRequest=(env.CHANGE_ID != null && env.CHANGE_ID.trim().length()>0)
 
-                echo "gitCommit:${gitCommitId}"
+                echo "gitCommitId:${gitCommitId}"
                 echo "isPullRequest:${isPullRequest}"
 
                 if (isPullRequest){
-                    gitRemoteRef=sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep 'refs/remotes/origin/pr/'").trim()
+                    gitRemoteRef=sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommitId}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep 'refs/remotes/origin/pr/'").trim()
                 }else{
-                    gitRemoteRef=sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep -v 'refs/remotes/origin/pr/'").trim()
+                    gitRemoteRef=sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommitId}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep -v 'refs/remotes/origin/pr/'").trim()
                 }
 
                 echo "gitRemoteRef:${gitRemoteRef}"
