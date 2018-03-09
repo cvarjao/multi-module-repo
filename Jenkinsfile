@@ -31,6 +31,7 @@ pipeline {
               checkout scm
               //sh "git rev-parse HEAD"
               //sh "git ls-remote"
+              sh "git show-ref --head"
               sh "git show-ref --head --dereference"
               //sh "git branch"
               //sh "git branch -a"
