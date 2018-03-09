@@ -1,3 +1,7 @@
+def doDeploy=false;
+def gitCommitId=''
+def isPullRequest=false;
+
 pipeline {
     // The options directive is for configuration that applies to the whole job.
     options {
@@ -9,6 +13,79 @@ pipeline {
     stages {
         stage('checkout') {
             agent any
+            steps {
+              checkout scm
+              //sh "git rev-parse HEAD"
+              //sh "git ls-remote"
+              //sh "git show-ref --head --dereference"
+              //sh "git branch"
+              //sh "git branch -a"
+              //sh "git status"
+              //sh "git status -sb"
+              //echo "${env}"
+              echo 'Building Branch: ' + env.BRANCH_NAME
+              echo 'Build Number: ' + env.BUILD_NUMBER
+              echo 'CHANGE_ID: ' + env.CHANGE_ID
+              echo "CHANGE_TARGET: ${env.CHANGE_TARGET}"
+              echo "JOB_NAME: ${env.JOB_NAME}"
+              echo "JOB_BASE_NAME: ${env.JOB_BASE_NAME}"
+              //timeout(time: 10, unit: 'MINUTES') {
+              //  echo "Checkout ..."
+              //  echo "Checkout ... Done!"
+              //}
+              script {
+                gitCommitId = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+                isPullRequest=(env.CHANGE_ID != null && env.CHANGE_ID.trim().length()>0)
+
+                echo "gitCommit:${gitCommitId}"
+                echo "isPullRequest:${isPullRequest}"
+
+                //def gitRemoteRefBranch = sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep -v 'refs/remotes/origin/pr/'").trim()
+                //echo "gitRemoteRefBranch:${gitRemoteRefBranch}"
+
+                //def gitRemoteRefPr = sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommit}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep 'refs/remotes/origin/pr/'").trim()
+                //echo "gitRemoteRefPr:${gitRemoteRefPr}"
+
+
+                def scmUrl = scm.getUserRemoteConfigs()[0].getUrl()
+                def appName = null;
+                def envName = null;
+                def buildBranchName = null;
+
+                if (isPullRequest){
+                  appName=env.CHANGE_TARGET.split('/')[0]
+                  envName='pr'+env.CHANGE_ID;
+                  buildBranchName = "refs/pull/${env.CHANGE_ID}/head";
+                }else{
+                  appName=env.BRANCH_NAME.split('/')[0];
+                  envName=env.BRANCH_NAME.substring(appName.length() +1 ).replaceAll('\\Q/\\E','-');
+                  buildBranchName = env.BRANCH_NAME;
+                }
+
+                def appId = "${appName}-${envName}";
+
+                def baseDeleteLabels=[ 'app-name':appName, 'env-name':envName]
+                def baseNewAppLabels=[ 'app':appId, 'env-name':envName, 'build-number':"${env.BUILD_NUMBER}", 'app-name':appName]
+
+                if (isPullRequest){
+                  baseNewAppLabels['from-pr']='true'
+                }
+
+                echo "scmUrl:${scmUrl}"
+                echo "appName:${appName}"
+                echo "envName:${envName}"
+                echo "appId:${appId}"
+                echo "buildBranchName:${buildBranchName}"
+                echo "scm.getBranches():${scm.getBranches()}"
+                echo "scm.getKey():${scm.getKey()}"
+              }
+            }
+        }
+        stage('deploy - DEV') {
+            agent any
+            when {
+                expression { doDeploy == true}
+            }
             steps {
               checkout scm
               //sh "git rev-parse HEAD"
