@@ -1,6 +1,16 @@
+import hudson.model.Result
+import jenkins.model.CauseOfInterruption.UserInterruption
+
+
 def doDeploy=false;
 def gitCommitId=''
 def isPullRequest=false;
+
+def killOldBuilds() {
+  while(currentBuild.rawBuild.getPreviousBuildInProgress() != null) {
+    currentBuild.rawBuild.getPreviousBuildInProgress().doKill()
+  }
+}
 
 pipeline {
     // The options directive is for configuration that applies to the whole job.
@@ -14,6 +24,7 @@ pipeline {
         stage('checkout') {
             agent any
             steps {
+              killOldBuilds
               checkout scm
               //sh "git rev-parse HEAD"
               //sh "git ls-remote"
