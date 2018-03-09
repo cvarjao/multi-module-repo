@@ -24,7 +24,9 @@ pipeline {
         stage('checkout') {
             agent any
             steps {
-              killOldBuilds
+              script {
+                killOldBuilds();
+              }
               checkout scm
               //sh "git rev-parse HEAD"
               //sh "git ls-remote"
