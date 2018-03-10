@@ -1,3 +1,4 @@
+
 import hudson.model.Result
 import jenkins.model.CauseOfInterruption.UserInterruption
 
@@ -22,7 +23,7 @@ pipeline {
     }
     agent none
     stages {
-        stage('checkout') {
+        stage('Prepare') {
             agent any
             steps {
               script {
@@ -54,15 +55,15 @@ pipeline {
 
                 echo "gitCommitId:${gitCommitId}"
                 echo "isPullRequest:${isPullRequest}"
-                /*
-                if (isPullRequest){
-                    gitRemoteRef=sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommitId}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep 'refs/remotes/origin/pr/'").trim()
-                }else{
-                    gitRemoteRef=sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommitId}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep -v 'refs/remotes/origin/pr/'").trim()
-                }
+
+                //if (isPullRequest){
+                //    gitRemoteRef=sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommitId}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep 'refs/remotes/origin/pr/'").trim()
+                //}else{
+                //    gitRemoteRef=sh(returnStdout: true, script: "git show-ref --head --dereference | grep '${gitCommitId}' | cut  -d' ' -f2 | grep 'refs/remotes/origin/' | grep -v 'refs/remotes/origin/pr/'").trim()
+                //}
 
                 echo "gitRemoteRef:${gitRemoteRef}"
-                */
+
 
                 def scmUrl = scm.getUserRemoteConfigs()[0].getUrl()
                 def appName = null;
@@ -96,6 +97,15 @@ pipeline {
                 echo "scm.getBranches():${scm.getBranches()}"
                 echo "scm.getKey():${scm.getKey()}"
               }
+            }
+        }
+        stage('Build') {
+            agent any
+            when {
+                expression { doDeploy == true}
+            }
+            steps {
+                echo 'Building'
             }
         }
         stage('deploy - DEV') {
